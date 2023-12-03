@@ -4,45 +4,70 @@ import (
 	"fmt"
 )
 
+// Node contains methods for adding/retrieving children
+// and rendering a tree drawing.
 type Node struct {
-	parent *Node
+	parent   *Node
 	children []*Node
 	contents string
 }
 
+// GetChild returns a pointer to the y'th child
+// of the Node. If the y'th child does not exist
+// a nil pointer is returned.
+func (n *Node) GetChild(y int) (dc *Node) {
+	for i, c := range n.children {
+		if y == i {
+			return c
+		}
+	}
+	return nil
+}
+
+// NewNode returns a new node with contents of
+// the passed string.
 func NewNode(contents string) Node {
 	return Node{
 		contents: contents,
 	}
 }
 
+// String() satisfies the Stringer interface
 func (n Node) String() string {
 	return n.contents
 }
 
-func (n *Node) NewChild(contents string) {
+// NewChild adds a child with contents of the passed
+// string to this Node's children. It returns the pointer
+// to the new Node. This can be discarded or used for chaining
+// methods in literals (e.g., a.NewChild("foo").NewChild("bar"))
+func (n *Node) NewChild(contents string) *Node {
 	nn := Node{contents: contents}
-	n.AddChild(nn)
+	n.AddChild(&nn)
+	return &nn
 }
 
-func (n *Node) AddChild(nc Node) {
+// AddChild adds the given Node to the children
+// of the current Node
+func (n *Node) AddChild(nc *Node) {
 	nc.parent = n
-	n.children = append(n.children, &nc)
+	n.children = append(n.children, nc)
 }
 
+// Draw returns a string of the rendered tree for this
+// Node as if this node is root
 func (n Node) Draw() string {
-	return n.draw("", "", 0, false, false, false, false)
+	return n.draw("", "", false, false, false, false)
 }
 
-func (n *Node) draw(rendering, padding string, decoratorType int, amSibling, amLastSibling, parentIsSibling, parentIsLastSibling bool) string {
+// draw is meant to be a recursive function passing knowledge about parent relationships
+// down as function args through iterations.
+func (n *Node) draw(rendering, padding string, amSibling, amLastSibling, parentIsSibling, parentIsLastSibling bool) string {
 	var decorator string
-	switch decoratorType {
-		case 1:
-			decorator = "├── "
-		case 2:
-			decorator = "└── "
-		default:
-			decorator = ""
+	if amLastSibling {
+		decorator = "└── "
+	} else {
+		decorator = "├── "
 	}
 	if n.parent != nil {
 		if parentIsSibling && !parentIsLastSibling {
@@ -52,30 +77,18 @@ func (n *Node) draw(rendering, padding string, decoratorType int, amSibling, amL
 		}
 		rendering += fmt.Sprintf("\n%s%s%s", padding, decorator, n)
 	} else {
-		rendering = fmt.Sprintf("%s", n)
+		rendering = n.String()
 	}
 	size := len(n.children)
-	for i, child := range n.children{
-		dt := 0 // decorator type
-		as := true // am sibling
-		als := false // am last sibling
-		pis := false // parent is sibling
+	for i, child := range n.children {
+		as := true            // am sibling
+		als := false          // am last sibling
+		pis := amSibling      // parent is sibling
 		pils := amLastSibling // parent is last sibling
-		switch i {
-			case size - 1: // last element
-				als = true
-				dt = 2
-			default:
-				dt = 1
-		}
-		if amSibling {
-			pis = true
-		}
-		if amLastSibling {
+		if i == (size - 1) {  // last element
 			als = true
 		}
-		rendering = fmt.Sprintf("%s", child.draw(rendering, padding, dt, as, als, pis, pils))
+		rendering = child.draw(rendering, padding, as, als, pis, pils)
 	}
 	return rendering
 }
-
