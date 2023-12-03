@@ -1,3 +1,26 @@
+// Package gree provides a Node struct to which
+// children can be retrieved and added. Calling
+// the Draw() method on a Node returns the 'tree'
+// like string representation of the Node and its
+// children
+//
+// Example:
+//
+//  func main() {
+//      a := gree.NewNode("root")
+//	a.NewChild("child1")
+//      a.NewChild("child2").NewChild("grandchild1")
+//	a.Draw()
+//  }
+//
+// Displays
+//
+//  root
+//      ├── child1
+//      └── child2
+//          └── grandchild1
+//
+// 
 package gree
 
 import (

@@ -26,6 +26,8 @@ func main() {
         b.NewChild("puppy1").NewChild("grandpuppy1")
         b.NewChild("puppy2").NewChild("grandpuppy2")
 
+	a.GetChild(2).AddChild(&b)
+
 	fmt.Println(a.Draw())
 }
 ```
