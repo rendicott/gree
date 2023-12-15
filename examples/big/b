@@ -1,0 +1,321 @@
+ root ──────────────────────┬─────────────────────────┐                       
+  └─── child0               └─── child1               └─── one
+      ├── grandchild0            ├── grandchild1           └── two
+      │   ├── carrot0            │   └── carrot3               ├── three
+      │   │   └── banana0        │       └── banana3           │   ├── four
+      │   └── bob                ├── grandchild1               │   │   └── five
+      ├── grandchild0            │   └── carrot4               │   └── banana6
+      │   └── carrot1            │       └── banana4           └── carrot6
+      │       └── banana1        └── grandchild1                   └── banana7
+      └── grandchild0                └── carrot5
+          └── carrot2                    └── banana5
+              └── banana2
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+   
+   
+   
+   
+   
+   
+   
+
+padding: '   '
+depth: 1
+amLastSibling: false
+amSibling: true
+parentIsSibling: false
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    '
+contents: 'child0'
+
+padding: '   '
+depth: 1
+amLastSibling: false
+amSibling: true
+parentIsSibling: false
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    '
+contents: 'child1'
+
+padding: '   '
+depth: 1
+amLastSibling: true
+amSibling: true
+parentIsSibling: false
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    '
+contents: 'one'
+
+padding: '   '
+depth: 2
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    │   '
+contents: 'grandchild0'
+
+padding: '   '
+depth: 2
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    │   '
+contents: 'grandchild0'
+
+padding: '   '
+depth: 2
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   '
+contents: 'grandchild0'
+
+padding: '   '
+depth: 3
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    │   │   '
+contents: 'carrot0'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   │   '
+contents: 'bob'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   │   │   '
+contents: 'banana0'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   │   '
+contents: 'carrot1'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │   │       '
+contents: 'banana1'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │       '
+contents: 'carrot2'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │           '
+contents: 'banana2'
+
+padding: '   '
+depth: 2
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    │   '
+contents: 'grandchild1'
+
+padding: '   '
+depth: 2
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '    │   '
+contents: 'grandchild1'
+
+padding: '   '
+depth: 2
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   '
+contents: 'grandchild1'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   │   '
+contents: 'carrot3'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │   │       '
+contents: 'banana3'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '    │   │   '
+contents: 'carrot4'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │   │       '
+contents: 'banana4'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │       '
+contents: 'carrot5'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '    │           '
+contents: 'banana5'
+
+padding: '   '
+depth: 2
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '        '
+contents: 'two'
+
+padding: '   '
+depth: 3
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '├── '
+prefix: '            '
+contents: 'three'
+
+padding: '   '
+depth: 3
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '            '
+contents: 'carrot6'
+
+padding: '   '
+depth: 4
+amLastSibling: false
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '├── '
+prefix: '            │   '
+contents: 'four'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '            │   '
+contents: 'banana6'
+
+padding: '   '
+depth: 5
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: false
+decorator: '└── '
+prefix: '            │   │   '
+contents: 'five'
+
+padding: '   '
+depth: 4
+amLastSibling: true
+amSibling: true
+parentIsSibling: true
+parentIsLastSibling: true
+decorator: '└── '
+prefix: '                '
+contents: 'banana7'
+
