@@ -1,27 +1,26 @@
- root ──────────────────────┬─────────────────────────┐                       
-  └─── child0               └─── child1               └─── one
-      ├── grandchild0            ├── grandchild1           └── two
-      │   ├── carrot0            │   └── carrot3               ├── three
-      │   │   └── banana0        │       └── banana3           │   ├── four
-      │   └── bob                ├── grandchild1               │   │   └── five
-      ├── grandchild0            │   └── carrot4               │   └── banana6
-      │   └── carrot1            │       └── banana4           └── carrot6
-      │       └── banana1        └── grandchild1                   └── banana7
-      └── grandchild0                └── carrot5
-          └── carrot2                    └── banana5
-              └── banana2
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-   
+ root ────────────────────┬───────────────────────┐                       
+  ├──── child0            └─── child1             └─── one
+  │   ├── grandchild0          ├── grandchild1         └── two
+  │   │   ├── carrot0          │   └── carrot3             ├── three
+  │   │   │   └── banana0      │       └── banana3         │   ├── four
+  │   │   └── bob              ├── grandchild1             │   │   └── five
+  │   ├── grandchild0          │   └── carrot4             │   └── banana6
+  │   │   └── carrot1          │       └── banana4         └── carrot6
+  │   │       └── banana1      └── grandchild1                 └── banana7
+  │   └── grandchild0              └── carrot5
+  │       └── carrot2                  └── banana5
+  │           └── banana2
+  │
+  └─── child1             
+      ├── grandchild1     
+      │   └── carrot3     
+      │       └── banana3 
+      ├── grandchild1     
+      │   └── carrot4     
+      │       └── banana4 
+      └── grandchild1     
+          └── carrot5
+              └── banana5 
    
    
    

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/rendicott/gree"
 )
@@ -12,7 +13,7 @@ func main() {
 		description := fmt.Sprintf("child%d",i)
 		b := gree.NewNode(description)
 		for j:=0; j<3; j++ {
-			description = fmt.Sprintf("grandchild%d",i)
+			description = fmt.Sprintf("grandchild%d",j)
 			b.NewChild(description)
 		}
 		a.AddChild(&b)
@@ -28,10 +29,18 @@ func main() {
 		c.NewChild(fmt.Sprintf("%s%d", "banana", i))
 	}
 	_ = a.GetGeneration(2)[0].NewChild("bob")
-	//a.SetPaddingAll("      ")
-	fmt.Println(a.Draw())
+	//err := a.SetPaddingAll("■■■■")
+	//err := a.SetPaddingAll("╳╳╳╳")
+	err := a.SetPaddingAll("   ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(a.Draw(true, true))
+	fmt.Println(a.DrawWrap(true))
 	//all := a.GetAllDescendents()
 	//for _, c := range all {
-	//	fmt.Println(c.Debug())
+	//	if c.String() == "four" {
+	//		fmt.Println(c.Debug())
+	//	}
 	//}
 }

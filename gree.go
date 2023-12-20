@@ -26,7 +26,9 @@ package gree
 import (
 	"fmt"
 	"strings"
+	"errors"
 	"unicode/utf8"
+	"strconv"
 )
 
 
@@ -48,7 +50,9 @@ type Node struct {
 	parentIsSibling bool
 	parentIsLastSibling bool
 	decorator string
-	prefix string
+	repr string
+	drawn bool
+	isRoot bool
 }
 
 func (n *Node) Debug() (string) {
@@ -57,7 +61,6 @@ func (n *Node) Debug() (string) {
 		parent = n.parent.contents
 	}
 	return fmt.Sprintf(
-			"%s: '%s'\n" +
 			"%s: %d\n" +
 			"%s: %v\n" +
 			"%s: %v\n" +
@@ -68,15 +71,14 @@ func (n *Node) Debug() (string) {
 			"%s: '%s'\n" +
 			"%s: '%s'\n" +
 			"%s: '%s'\n",
-		"padding", n.padding,
 		"depth", n.depth,
 		"amLastSibling", n.amLastSibling,
 		"amSibling", n.amSibling,
 		"parentIsSibling", n.parentIsSibling,
 		"parentIsLastSibling", n.parentIsLastSibling,
-		"padding", n.padding,
-		"decorator", n.decorator,
-		"prefix", n.prefix,
+		"padding", strings.Replace(n.padding," ","-",-1),
+		"decorator", strings.Replace(n.decorator," ","-",-1),
+		"repr", strings.Replace(n.repr, " ", "-", -1),
 		"contents", n.contents,
 		"parent", parent,
 	)
@@ -115,16 +117,17 @@ func (n *Node) getDescHeight() (int) {
 }
 
 func (n *Node) getDescMaxWidth() (max int) {
-	all := n.GetAllDescendents()
-	for _, desc := range all {
-		rend := desc.prefix + desc.decorator + desc.String()
-		rend = strings.TrimPrefix(rend, desc.padding)
-		runeCount := utf8.RuneCountInString(rend)
-		//runeCountDec := utf8.RuneCountInString(desc.decorator)
-		//fmt.Printf("'%s' is len %d\n", rend, runeCount)
-		//fmt.Printf("decorator '%s' is len %d\n", desc.decorator, runeCountDec)
-		if runeCount > max {
-			max = runeCount
+	// have to draw first....yuck
+	if n.drawn {
+		all := n.GetAllDescendents()
+		for _, desc := range all {
+			runeCount := utf8.RuneCountInString(desc.repr)
+			//runeCountDec := utf8.RuneCountInString(desc.decorator)
+			//fmt.Printf("'%s' is len %d\n", rend, runeCount)
+			//fmt.Printf("decorator '%s' is len %d\n", desc.decorator, runeCountDec)
+			if runeCount > max {
+				max = runeCount
+			}
 		}
 	}
 	return max
@@ -150,17 +153,25 @@ func (n *Node) SetContents(newContents string) {
 }
 
 // SetPadding sets new padding for this node
-func (n *Node) SetPadding(padding string) {
+func (n *Node) SetPadding(padding string) (error) {
+	if len(padding) < 1 {
+		return errors.New("padding must be greater than len(1)")
+	}
 	n.padding = padding
+	return nil
 }
 
 // SetPadding sets new padding for this node
 // and all of it's descendents
-func (n *Node) SetPaddingAll(padding string) {
+func (n *Node) SetPaddingAll(padding string) (err error){
 	n.padding = padding
 	for _, node := range n.GetAllDescendents() {
-		node.SetPadding(padding)
+		err = node.SetPadding(padding)
+		if err != nil {
+			return err
+		}
 	}
+	return err
 }
 
 // GetAllDescendents gets all descendents of this node
@@ -209,23 +220,87 @@ func (n *Node) updateDepths() {
 	}
 }
 
-// Draw returns a string of the rendered tree for this
-// Node as if this node is root
-func (n Node) Draw() (rendering string) {
-	n.relate(false, false, false, false)
-	tempRendering := n.draw("")
-	lines := strings.Split(tempRendering, "\n")
-	// remove paddingn from 1st generation
-	for _, line := range lines {
-		rendering += " " + strings.TrimPrefix(line, n.padding) + "\n"
+func (n Node) DrawWrap(debug bool) (rendering string) {
+	_ = n.draw("","",0,false)
+	n.drawn = true
+	maxWidth := n.getDescMaxWidth()
+	fmt.Printf("overall maxWidth = %d\n", maxWidth)
+	for _, child := range n.children {
+		fmt.Println(child.Draw(false, debug))
+		child.drawn = true
+		fmt.Printf("child '%s' maxWidth = %d\n", child, child.getDescMaxWidth())
+		for _, c := range child.children {
+			fmt.Println(c.Draw(false, debug))
+			c.drawn = true
+			fmt.Printf("grandchild '%s' maxWidth = %d\n", c, c.getDescMaxWidth())
+		}
 	}
 	return rendering
 }
 
+// Draw returns a string of the rendered tree for this
+// Node as if this node is root
+func (n Node) Draw(border, debug bool) (rendering string) {
+	// set this node as root
+	n.isRoot = true
+	n.relate(false, false, false, false)
+	// first have to draw before getDescMaxWidth works properly
+	_ = n.draw("","",0,border)
+	n.drawn = true
+	maxWidth := n.getDescMaxWidth()
+	tempRendering := n.draw("", "", maxWidth,border)
+	//lines := strings.Split(tempRendering, "\n")
+	//// remove paddingn from 1st generation
+	//for _, line := range lines {
+	//	rendering += " " + strings.TrimPrefix(line, n.padding) + "\n"
+	//}
+	if border {
+		topBorder := "┏" + strings.Repeat("━", maxWidth-1) + "┓"
+		botBorder := "┗" + strings.Repeat("━", maxWidth-1) + "┛"
+		rendering = fmt.Sprintf("%s%s\n%s", topBorder, tempRendering, botBorder)
+	} else {
+		rendering = tempRendering
+	}
+	if debug {
+		rendering += drawRuler(maxWidth)
+	}
+	return rendering
+}
+
+// drawRuler adds a ruler with column identifiers
+// every 5 ticks. It tries to keep labels lined
+// up with tick marks
+func drawRuler(maxWidth int) (ruler string) {
+	ruler += "\n"
+	for i := 0; i <= maxWidth; i++ {
+		if i % 5 == 0 {
+			ruler += "|"
+		} else {
+			ruler += "."
+		}
+	}
+	ruler += "\n"
+	skipNextSpace := false
+	for i := 0; i <= maxWidth; i++ {
+		if i % 5 == 0 {
+			ruler += strconv.Itoa(i)
+			if i >= 10 {
+				skipNextSpace = true
+			}
+		} else {
+			if !skipNextSpace {
+				ruler += " "
+			}
+			skipNextSpace = false
+		}
+	}
+	ruler += "\n"
+	return ruler
+}
+
 // draw builds the rendering string rcursively
-func (n *Node) draw(rendering string) string {
+func (n *Node) draw(rendering, padding string, maxWidth int, border bool) string {
 	var decorator string
-	var padding string
 	horo := "─"
 	if n.amLastSibling {
 		decorator = "└" + strings.Repeat(horo, len(n.padding)-1) + " "
@@ -233,21 +308,58 @@ func (n *Node) draw(rendering string) string {
 		decorator = "├" + strings.Repeat(horo, len(n.padding)-1) + " "
 	}
 	n.decorator = decorator
-	if n.parent != nil {
-		if n.parentIsSibling && !n.parentIsLastSibling {
-			padding += "│" + strings.Repeat(n.padding, n.depth)
-		} else {
-			padding += " " + strings.Repeat(n.padding, n.depth)
-		}
-		rendering += fmt.Sprintf("\n%s%s%s", padding, decorator, n)
-	} else {
-		rendering = n.String()
+	var repr string
+	if border {
+		repr = "┃"
 	}
-	n.prefix = padding
+	repr += n.String()
+	// grab a fillchar from the user defined padding instead of
+	// just always using space
+	var fillChar string
+	if len(n.padding) > 0 {
+		fillChar = firstRuneChar(n.padding)
+	} else {
+		fillChar = " "
+	}
+	if n.parent != nil && !n.isRoot {
+		if n.depth > 1 {
+			if n.parentIsSibling && !n.parentIsLastSibling {
+				padding += "│" + n.padding
+			} else if n.parent.isRoot {
+				padding += ""
+			} else {
+				padding += fillChar + n.padding
+			}
+		}
+		if border {
+			repr = fmt.Sprintf("┃%s%s%s", padding, decorator, n)
+		} else {
+			repr = fmt.Sprintf("%s%s%s", padding, decorator, n)
+		}
+	}
+	currWidth := utf8.RuneCountInString(repr)
+	if currWidth < maxWidth {
+		fill := maxWidth - currWidth
+		repr += strings.Repeat(fillChar, fill)
+	}
+	if border {
+		repr += "┃"
+	}
+	rendering += fmt.Sprintf("\n%s", repr)
+	n.repr = repr
 	for _, child := range n.children {
-		rendering = child.draw(rendering)
+		rendering = child.draw(rendering, padding, maxWidth, border)
 	}
 	return rendering
+}
+
+func firstRuneChar(s string) (char string) {
+	for i, w := 0, 0; i < len(s); i += w {
+		runeValue, width := utf8.DecodeRuneInString(s[i:])
+		w = width
+		return string(runeValue)
+	}
+	return " "
 }
 
 // relate is meant to be a recursive function passing knowledge about parent relationships
