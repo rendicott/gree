@@ -12,8 +12,4 @@ func main() {
 	a.NewChild("child2")
 	a.NewChild("child3").NewChild("grandchild1")
 	fmt.Println(a.Draw())
-	all := a.GetAllDescendents()
-	for _, n := range all {
-		fmt.Println(n.Debug())
-	}
 }

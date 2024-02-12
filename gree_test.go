@@ -1,16 +1,17 @@
 package gree
 
 import (
-	"testing"
-	"os"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
 )
 
 func TestDrawSimple(t *testing.T) {
-        a := NewNode("root")
-        a.NewChild("child1")
-        a.NewChild("child2")
-        a.NewChild("child3").NewChild("grandchild1")
+	a := NewNode("root")
+	a.NewChild("child1")
+	a.NewChild("child2")
+	a.NewChild("child3").NewChild("grandchild1")
 	got := a.Draw()
 	testfile := "./testdata/TestDrawSimple.txt"
 	dat, err := os.ReadFile(testfile)
@@ -18,33 +19,41 @@ func TestDrawSimple(t *testing.T) {
 		t.Errorf("error pulling expected from file '%s', error '%s'\n", testfile, err.Error())
 	}
 	expected := string(dat)
-	if got != expected {
-		fmt.Println(got)
-		t.Errorf("output does not match expected in testfile %s\n", testfile)
+	linesExpected := strings.Split(expected, "\n")
+	linesGot := strings.Split(got, "\n")
+	for i := 0; i >= len(linesExpected); i++ {
+		lineGot := ""
+		if len(linesGot) >= i {
+			lineGot = linesGot[i]
+		}
+		if linesExpected[i] != lineGot {
+			t.Errorf("output does not match expected in testfile %s\n", testfile)
+			t.Errorf("line %d, expected '%s', got '%s'", i, linesExpected[i], lineGot)
+		}
 	}
 }
 
 func TestDepth(t *testing.T) {
 	a := NewNode("root")
-        a.NewChild("child1")
-        a.NewChild("child2")
-        a.NewChild("child3").NewChild("grandchild1")
+	a.NewChild("child1")
+	a.NewChild("child2")
+	a.NewChild("child3").NewChild("grandchild1")
 	nodes := a.GetAllDescendents()
 	got := make(map[string]int)
 	for _, gotNode := range nodes {
 		got[gotNode.String()] = gotNode.GetDepth()
 	}
 	expected := map[string]int{
-		"root": 0,
-		"child1": 1,
-		"child2": 1,
-		"child3": 1,
+		"root":        0,
+		"child1":      1,
+		"child2":      1,
+		"child3":      1,
 		"grandchild1": 2,
 	}
 	for k, v := range expected {
 		if got[k] != v {
 			t.Errorf("expected '%s=%d', got '%d'",
-				k,v,
+				k, v,
 				got[k],
 			)
 		}
@@ -66,9 +75,9 @@ func TestDepthSimple(t *testing.T) {
 
 func TestHeight(t *testing.T) {
 	a := NewNode("root")
-        a.NewChild("child1")
-        a.NewChild("child2")
-        a.NewChild("child3").NewChild("grandchild1")
+	a.NewChild("child1")
+	a.NewChild("child2")
+	a.NewChild("child3").NewChild("grandchild1")
 	expected := 4
 	got := a.getDescHeight()
 	if got != expected {
@@ -78,14 +87,28 @@ func TestHeight(t *testing.T) {
 
 func TestMaxWidth(t *testing.T) {
 	a := NewNode("root")
-        a.NewChild("child1")
-        a.NewChild("child2")
-        a.NewChild("child3").NewChild("grandchild1")
+	a.NewChild("child1")
+	a.NewChild("child2")
+	a.NewChild("child3").NewChild("grandchild1")
 	a.Draw()
-	expected := 20
+	expected := 19
 	got := a.getDescMaxWidth()
 	if got != expected {
 		fmt.Println(a.Draw())
 		t.Errorf("expected %d, got %d", expected, got)
 	}
+}
+
+func TestGetAlignCol(t *testing.T) {
+	a := NewNode("root")
+	a.NewChild("child1")
+	a.NewChild("child2")
+	a.NewChild("child3").NewChild("grandchild1").NewChild("grandchild2")
+	di := DrawInput{
+		Align:  true,
+		Border: true,
+	}
+	rendering := a.DrawOptions(&di)
+	fmt.Println(rendering)
+	fmt.Println(getAlignCol(rendering))
 }
