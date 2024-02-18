@@ -64,8 +64,8 @@ func TestDepthSimple(t *testing.T) {
 	a := NewNode("root")
 	b := NewNode("child1")
 	c := NewNode("grandchild1")
-	b.AddChild(&c)
-	a.AddChild(&b)
+	b.AddChild(c)
+	a.AddChild(b)
 	expected := 2
 	got := c.GetDepth()
 	if got != expected {
