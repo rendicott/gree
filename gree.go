@@ -39,7 +39,9 @@ type Node struct {
 
 	// Contents is the string identifier for thise node
 	// and is what will be displayed
-	contents string
+	contents         string
+	contentFontWidth int
+	contentLength    int
 	// Padding determines how many spaces for
 	// each indentation, defaults to "   " (3 spaces)
 	padding             string
@@ -49,26 +51,12 @@ type Node struct {
 	parentIsSibling     bool
 	parentIsLastSibling bool
 	parentIsRoot        bool
-	decorator           string
-	repr                string
 	isRoot              bool
-	aligned             bool
 	x1                  int
 	x2                  int
 	done                bool
 	index               int
 	count               counter
-	labelDrawn          bool
-}
-
-func (n *Node) showLineage() (repr string) {
-	repr += n.String() + ": "
-	for _, p := range n.lineage {
-		if p != nil {
-			repr += p.String() + ","
-		}
-	}
-	return repr
 }
 
 type counter struct {
@@ -88,6 +76,7 @@ func (c *counter) get() int {
 func (n *Node) setx1(x int) {
 	n.x1 = x
 	n.x2 = n.x1 + utf8.RuneCountInString(n.contents)
+	n.contentLength = utf8.RuneCountInString(n.contents)
 }
 
 type collector struct {
@@ -116,10 +105,6 @@ func (n *Node) GetChild(y int) (dc *Node) {
 	return nil
 }
 
-func (n *Node) getDescHeight() int {
-	return len(n.GetAllDescendents())
-}
-
 func (n *Node) relateAsRoot() {
 	n.isRoot = true
 	n.relate(&n.count, false, true, false, false, nil)
@@ -129,10 +114,10 @@ func (n *Node) getDescMaxWidth() (max int) {
 	// first have to relate before getDescMaxWidth works properly, yuck
 	n.relateAsRoot()
 	all := n.GetAllDescendents()
-	for _, desc := range all {
-		lots := desc.x2 + utf8.RuneCountInString(desc.decorator) + utf8.RuneCountInString(desc.padding)
-		if lots > max {
-			max = lots
+	for _, dec := range all {
+		declen := dec.x2 + utf8.RuneCountInString(dec.padding)
+		if declen > max {
+			max = declen
 		}
 	}
 	return max
@@ -231,11 +216,9 @@ func (n *Node) updateDepths() {
 
 // DrawInput holds input options for the DrawOptions method
 type DrawInput struct {
-	Border     bool   // whether or not to draw a border
-	Debug      bool   // whether or not to add debug info to output
-	Padding    string // rendered padding for this and child nodes
-	Align      bool   // whether to align all labels
-	startIndex int
+	Border  bool   // whether or not to draw a border
+	Debug   bool   // whether or not to add debug info to output
+	Padding string // rendered padding for this and child nodes
 }
 
 // Draw sets default input options and returns a string
@@ -245,7 +228,6 @@ func (n Node) Draw() (rendering string) {
 		Border:  false,
 		Debug:   false,
 		Padding: n.padding,
-		Align:   false,
 	}
 	rendering = n.DrawOptions(&di)
 	return rendering
@@ -302,10 +284,12 @@ func vbar() rune {
 	return []rune("│")[0]
 }
 
-func (n *Node) render(width, rightAlign int) (row *rrow) {
-	fmt.Printf("rendering node '%s' with rightAlign = %d\n", n.String(), rightAlign)
+func (n *Node) render(width int, border bool) (row *rrow) {
 	row = newRrow(width)
 	for x := 0; x <= width; x++ {
+		if (x == 0 || x == width) && border {
+			row.setRowI(x, vbar(), true)
+		}
 		for _, p := range n.lineage {
 			if x == p.x1 {
 				if !p.amLastSibling {
@@ -313,10 +297,8 @@ func (n *Node) render(width, rightAlign int) (row *rrow) {
 				}
 			}
 		}
-		if rightAlign != 0 && x == rightAlign {
-			row.appendString(x, n.decorator+n.String())
-		} else if x == n.x1 && rightAlign == 0 {
-			row.appendString(x, n.decorator+n.String())
+		if x == n.x1 {
+			row.appendString(x, n.genDecorator(0)+n.String())
 		} else {
 			row.setRowI(x, n.padRune(), false)
 		}
@@ -324,29 +306,81 @@ func (n *Node) render(width, rightAlign int) (row *rrow) {
 	return row
 }
 
+func (n *Node) genDecorator(decLength int) string {
+	if n.isRoot {
+		return ""
+	}
+	length := utf8.RuneCountInString(n.padding) - 1
+	if decLength != 0 {
+		length = decLength
+	}
+	if n.amLastSibling && !n.isRoot {
+		return sibCharLastS() + strings.Repeat(horos(), length) + " "
+	} else {
+		return sibCharS() + strings.Repeat(horos(), length) + " "
+	}
+}
+
 func (n Node) padRune() rune {
 	return []rune(firstRuneChar(n.padding))[0]
 }
 
-func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
-	n.relateAsRoot() // set key properties of nodes
-	width := n.getDescMaxWidth()
-	bmp := make(map[int][]rune)
-	desc := n.GetAllDescendents()
-	longest := n.getLongestNodeLabel()
-	var rightAlign int
-	if di.Align {
-		rightAlign = width - longest
+// maybe we could handle chars with greater font width later
+func (n *Node) setFontWidth() {
+	n.contentFontWidth = utf8.RuneCountInString(n.contents)
+	// couldn't figure out a good way to do this
+	// for _, runeValue := range n.String() {
+	// 	if unicode.Is(unicode.Han, runeValue) {
+	// 		n.contentFontWidth += 4
+	// 	}
+	//}
+}
+
+func genTopBorder(width int) string {
+	top := fmt.Sprintf("┌%s┐", strings.Repeat(horos(), width-1))
+	return top
+}
+
+func genBottomBorder(width int) string {
+	bottom := fmt.Sprintf("└%s┘", strings.Repeat(horos(), width-1))
+	return bottom
+}
+
+func (n *Node) shiftAllRight(amount int) {
+	n.setx1(n.x1 + amount)
+	for _, desc := range n.GetAllDescendents() {
+		desc.setx1(desc.x1 + amount)
 	}
+}
+
+func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
+	if di.Padding != "" {
+		n.SetPaddingAll(di.Padding)
+	}
+	n.relateAsRoot() // set key properties of nodes
+	bmp := make(map[int][]rune)
+	width := n.getDescMaxWidth()
+	if di.Border {
+		width += 2
+		n.shiftAllRight(2)
+	}
+	desc := n.GetAllDescendents()
 	// draw root first
-	bmp[0] = n.render(width, 0).toRunes()
+	bmp[0] = n.render(width, di.Border).toRunes()
+	fmt.Println("done drawing root")
 	// now draw descendents
 	for i := 1; i <= len(desc); i++ {
 		cn := desc[i-1]
-		bmp[i] = cn.render(width, rightAlign).toRunes()
+		fmt.Printf("drawing node %s\n", cn.String())
+		cn.setFontWidth()
+		bmp[i] = cn.render(width, di.Border).toRunes()
 	}
 	// build string
 	var pre strings.Builder
+	if di.Border {
+		pre.Write([]byte(genTopBorder(width)))
+		pre.Write([]byte("\n"))
+	}
 	// order our map
 	keys := make([]int, 0)
 	for k, _ := range bmp {
@@ -358,68 +392,15 @@ func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
 		pre.Write([]byte(string(line)))
 		pre.Write([]byte("\n"))
 	}
+	if di.Border {
+		pre.Write([]byte(genBottomBorder(width)))
+		pre.Write([]byte("\n"))
+	}
+	if di.Debug {
+		pre.Write([]byte(drawRuler(width)))
+	}
 	rendering = pre.String()
 	return rendering
-}
-
-func (n Node) getLongestNodeLabel() (max int) {
-	descs := n.GetAllDescendents()
-	for _, desc := range descs {
-		lenLabel := utf8.RuneCountInString(desc.String())
-		if lenLabel > max {
-			max = lenLabel
-		}
-	}
-	return max
-}
-
-func numRunesToStartIdex(rendering string, startIndex int) (count int) {
-	lines := strings.Split(rendering, "\n")
-	for _, line := range lines {
-		if len(line) >= startIndex {
-			toStart := line[0:startIndex]
-			tcount := utf8.RuneCountInString(toStart)
-			if tcount > count {
-				count = tcount
-			}
-		}
-	}
-	return count
-}
-
-func findEndOfDiagramLine(line string) int {
-	runes := []rune("└━")
-	controlRune := runes[0]
-	horoRune := runes[1]
-	spaceByte := []byte(" ")[0]
-	lineLength := utf8.RuneCountInString(line)
-	for i, char := range line {
-		if char == controlRune {
-			// fmt.Printf("hit controlrune '%v' at index %d\n", char, i)
-			for j := i; j <= lineLength; j++ {
-				// fmt.Printf("line[%d] = '%v'\n", j, rune(line[j]))
-				if rune(line[j]) == horoRune {
-					// fmt.Printf("skipping horoRune '%v' at index '%d'\n", horoRune, j)
-					continue
-				} else if line[j] == spaceByte {
-					return j
-				}
-			}
-		}
-	}
-	return 0
-}
-
-func getAlignCol(rendering string) (max int) {
-	lines := strings.Split(rendering, "\n")
-	for _, line := range lines {
-		endIndex := findEndOfDiagramLine(line)
-		// fmt.Printf("got endInex = %d for line '%s'\n", endIndex, line)
-		if endIndex > max {
-			max = endIndex
-		}
-	}
-	return max
 }
 
 // drawRuler adds a ruler with column identifiers
@@ -462,11 +443,16 @@ func firstRuneChar(s string) (char string) {
 	return " "
 }
 
-func horo() rune {
-	return []rune(horos())[0]
-}
 func horos() string {
 	return "─"
+}
+
+func sibCharLastS() string {
+	return "└"
+}
+
+func sibCharS() string {
+	return "├"
 }
 
 // relate is meant to be a recursive function passing knowledge about parent relationships
@@ -482,18 +468,11 @@ func (n *Node) relate(count *counter, amSibling, amLastSibling, parentIsSibling,
 	n.parentIsLastSibling = parentIsLastSibling
 	n.parentIsSibling = parentIsSibling
 	size := len(n.children)
-	if !n.isRoot {
-		if n.amLastSibling {
-			n.decorator = "└" + strings.Repeat(horos(), len(n.padding)-1) + " "
-		} else {
-			n.decorator = "├" + strings.Repeat(horos(), len(n.padding)-1) + " "
-		}
-	}
 	if parent != nil {
 		if parent.isRoot {
 			n.setx1(parent.x1)
 		} else {
-			n.setx1(parent.x1 + utf8.RuneCountInString(n.decorator))
+			n.setx1(parent.x1 + utf8.RuneCountInString(n.padding) + 1)
 		}
 		n.lineage = append(n.parent.lineage, n.parent)
 		if parent.isRoot {
