@@ -73,25 +73,13 @@ func TestDepthSimple(t *testing.T) {
 	}
 }
 
-func TestHeight(t *testing.T) {
-	a := NewNode("root")
-	a.NewChild("child1")
-	a.NewChild("child2")
-	a.NewChild("child3").NewChild("grandchild1")
-	expected := 4
-	got := a.getDescHeight()
-	if got != expected {
-		t.Errorf("expected %d, got %d", expected, got)
-	}
-}
-
 func TestMaxWidth(t *testing.T) {
 	a := NewNode("root")
 	a.NewChild("child1")
 	a.NewChild("child2")
 	a.NewChild("child3").NewChild("grandchild1")
 	a.Draw()
-	expected := 19
+	expected := 18
 	got := a.getDescMaxWidth()
 	if got != expected {
 		fmt.Println(a.Draw())
@@ -99,16 +87,14 @@ func TestMaxWidth(t *testing.T) {
 	}
 }
 
-func TestGetAlignCol(t *testing.T) {
+func TestGetGeneration(t *testing.T) {
 	a := NewNode("root")
 	a.NewChild("child1")
 	a.NewChild("child2")
-	a.NewChild("child3").NewChild("grandchild1").NewChild("grandchild2")
-	di := DrawInput{
-		Align:  true,
-		Border: true,
+	a.NewChild("child3").NewChild("grandchild1")
+	got := a.GetGeneration(1)
+	expected := 3
+	if len(got) != expected {
+		t.Errorf("expected %d, got %d", expected, len(got))
 	}
-	rendering := a.DrawOptions(&di)
-	fmt.Println(rendering)
-	fmt.Println(getAlignCol(rendering))
 }

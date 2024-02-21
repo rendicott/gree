@@ -28,6 +28,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/fatih/color"
 )
 
 // Node contains methods for adding/retrieving children
@@ -40,6 +42,8 @@ type Node struct {
 	// Contents is the string identifier for thise node
 	// and is what will be displayed
 	contents         string
+	contentsColored  string
+	colored          bool
 	contentFontWidth int
 	contentLength    int
 	// Padding determines how many spaces for
@@ -77,6 +81,31 @@ func (n *Node) setx1(x int) {
 	n.x1 = x
 	n.x2 = n.x1 + utf8.RuneCountInString(n.contents)
 	n.contentLength = utf8.RuneCountInString(n.contents)
+}
+
+// SetColorMagenta sets the color of the node to magenta
+func (n *Node) SetColorMagenta() *Node {
+	return n.SetColor(color.FgMagenta)
+}
+
+// SetColorGreen sets the color of the node to green
+func (n *Node) SetColorYellow() *Node {
+	return n.SetColor(color.FgYellow)
+}
+
+// SetColorRed sets the color of the node to red
+func (n *Node) SetColorRed() *Node {
+	return n.SetColor(color.FgRed)
+}
+
+// SetColor sets the color of the node to the passed fatih/color attribute
+func (n *Node) SetColor(fatihcolor color.Attribute) *Node {
+	if n.contentsColored == "" {
+		n.contentsColored = n.contents
+	}
+	n.contentsColored = color.New(fatihcolor).Sprint(n.contentsColored)
+	n.colored = true
+	return n
 }
 
 type collector struct {
@@ -124,7 +153,8 @@ func (n *Node) getDescMaxWidth() (max int) {
 }
 
 // NewNode returns a new node with contents of
-// the passed string.
+// the passed string. Please do not use color formatted
+// strings and instead use the provided SetColor* methods.
 func NewNode(contents string) *Node {
 	n := Node{}
 	n.SetContents(contents)
@@ -132,12 +162,13 @@ func NewNode(contents string) *Node {
 	return &n
 }
 
-// String() satisfies the Stringer interface
+// String returns a string, satisfying the Stringer interface
 func (n Node) String() string {
 	return n.contents
 }
 
-// SetContents sets new contents for this node
+// SetContents sets new contents for this node. Please
+// do not use color formatted strings and instead use the provided SetColor* methods.
 func (n *Node) SetContents(newContents string) {
 	n.contents = newContents
 }
@@ -154,7 +185,7 @@ func (n *Node) setPadding(padding string) error {
 }
 
 // SetPadding sets new padding for this node
-// and all of it's descendents
+// and all of it's descendents.
 func (n *Node) SetPaddingAll(padding string) (err error) {
 	n.padding = padding
 	for _, node := range n.GetAllDescendents() {
@@ -184,6 +215,8 @@ func (n *Node) GetAllDescendents() (all []*Node) {
 // string to this Node's children. It returns the pointer
 // to the new Node. This can be discarded or used for chaining
 // methods in literals (e.g., a.NewChild("foo").NewChild("bar"))
+//
+// Please do not use color formatted strings and instead use the provided SetColor* methods.
 func (n *Node) NewChild(contents string) *Node {
 	nn := Node{}
 	nn.SetContents(contents)
@@ -285,6 +318,9 @@ func vbar() rune {
 }
 
 func (n *Node) render(width int, border bool) (row *rrow) {
+	if n.colored {
+		width = width + (utf8.RuneCountInString(n.contentsColored) - utf8.RuneCountInString(n.contents))
+	}
 	row = newRrow(width)
 	for x := 0; x <= width; x++ {
 		if (x == 0 || x == width) && border {
@@ -298,7 +334,11 @@ func (n *Node) render(width int, border bool) (row *rrow) {
 			}
 		}
 		if x == n.x1 {
-			row.appendString(x, n.genDecorator(0)+n.String())
+			if n.colored {
+				row.appendString(x, n.genDecorator(0)+n.contentsColored)
+			} else {
+				row.appendString(x, n.genDecorator(0)+n.String())
+			}
 		} else {
 			row.setRowI(x, n.padRune(), false)
 		}
@@ -353,6 +393,8 @@ func (n *Node) shiftAllRight(amount int) {
 	}
 }
 
+// DrawOptions takes a DrawInput struct with desired parameters
+// and returns the tree formatted string.
 func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
 	if di.Padding != "" {
 		n.SetPaddingAll(di.Padding)
@@ -361,17 +403,15 @@ func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
 	bmp := make(map[int][]rune)
 	width := n.getDescMaxWidth()
 	if di.Border {
-		width += 2
+		width += 3
 		n.shiftAllRight(2)
 	}
 	desc := n.GetAllDescendents()
 	// draw root first
 	bmp[0] = n.render(width, di.Border).toRunes()
-	fmt.Println("done drawing root")
 	// now draw descendents
 	for i := 1; i <= len(desc); i++ {
 		cn := desc[i-1]
-		fmt.Printf("drawing node %s\n", cn.String())
 		cn.setFontWidth()
 		bmp[i] = cn.render(width, di.Border).toRunes()
 	}
