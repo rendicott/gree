@@ -1,4 +1,4 @@
-# gree [![PkgGoDev](https://pkg.go.dev/github.com/rendicott/gree)](https://pkg.go.dev/github.com/rendicott/gree)
+# gree [![Go Reference](https://pkg.go.dev/badge/github.com/rendicott/gree.svg)](https://pkg.go.dev/github.com/rendicott/gree)
 Build nodes with children and display them like the classic `tree` command shows dirs
 
 ![](./examples/big/img/big.png)
