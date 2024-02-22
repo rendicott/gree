@@ -7,18 +7,28 @@
 // Example:
 //
 //	 func main() {
-//	     a := gree.NewNode("root")
-//		a.NewChild("child1")
-//	     a.NewChild("child2").NewChild("grandchild1")
-//		a.Draw()
+//		 a := gree.NewNode("root")
+//		 a.NewChild("child1")
+//		 a.NewChild("child2").NewChild("grandchild1")
+//		 fmt.Println(a.Draw())
 //	 }
 //
 // Displays
 //
 //	root
-//	    ├── child1
-//	    └── child2
-//	        └── grandchild1
+//	├── child1
+//	└── child2
+//	    └── grandchild1
+//
+// The package provides many convenient methods for
+// retrieving children by generation, getting descendent
+// depth, setting display padding, and setting colors.
+//
+// The package also exposes the DrawOptions method for
+// more fine grained control over the display.
+//
+// Any node from which the Draw*() methods are called
+// will be considered the root node for display purposes.
 package gree
 
 import (
@@ -99,6 +109,7 @@ func (n *Node) SetColorRed() *Node {
 }
 
 // SetColor sets the color of the node to the passed fatih/color attribute
+// Requires that the caller import fatih/color and reference their color.Attribute
 func (n *Node) SetColor(fatihcolor color.Attribute) *Node {
 	if n.contentsColored == "" {
 		n.contentsColored = n.contents
@@ -116,8 +127,8 @@ func (c *collector) add(n *Node) {
 	c.results = append(c.results, n)
 }
 
-// GetDepth returns the node's depth. Only valid after
-// a GetAllDescendents call has been run
+// GetDepth returns this node's depth. Depths are updated
+// as nodes are added.
 func (n *Node) GetDepth() int {
 	return n.depth
 }
