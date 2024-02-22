@@ -256,7 +256,7 @@ type DrawInput struct {
 
 // Draw sets default input options and returns a string
 // of the rendered tree for this Node as if this node is root
-func (n Node) Draw() (rendering string) {
+func (n *Node) Draw() (rendering string) {
 	di := DrawInput{
 		Border:  false,
 		Debug:   false,
@@ -328,7 +328,7 @@ func (n *Node) render(width int, border bool) (row *rrow) {
 		}
 		for _, p := range n.lineage {
 			if x == p.x1 {
-				if !p.amLastSibling {
+				if !p.amLastSibling && !p.isRoot {
 					row.setRowI(x, vbar(), false)
 				}
 			}
@@ -511,13 +511,11 @@ func (n *Node) relate(count *counter, amSibling, amLastSibling, parentIsSibling,
 	if parent != nil {
 		if parent.isRoot {
 			n.setx1(parent.x1)
+			n.parentIsRoot = true
 		} else {
 			n.setx1(parent.x1 + utf8.RuneCountInString(n.padding) + 1)
 		}
 		n.lineage = append(n.parent.lineage, n.parent)
-		if parent.isRoot {
-			n.parentIsRoot = true
-		}
 	}
 	for i, child := range n.children {
 		as := true            // am sibling
