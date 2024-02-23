@@ -41,6 +41,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/google/uuid"
+	"github.com/nathan-fiscaletti/consolesize-go"
 )
 
 // Node contains methods for adding/retrieving children
@@ -54,8 +55,10 @@ type Node struct {
 	// Contents is the string identifier for thise node
 	// and is what will be displayed
 	contents         string
+	contentsTrimmed  string
 	contentsColored  string
 	colored          bool
+	colorsApplied    []color.Attribute
 	contentFontWidth int
 	contentLength    int
 	// Padding determines how many spaces for
@@ -73,6 +76,8 @@ type Node struct {
 	done                bool
 	index               int
 	count               counter
+	terminalWidth       int
+	terminalHeight      int
 }
 
 type counter struct {
@@ -125,7 +130,20 @@ func (n *Node) SetColor(fatihcolor color.Attribute) *Node {
 	}
 	n.contentsColored = color.New(fatihcolor).Sprint(n.contentsColored)
 	n.colored = true
+	n.colorsApplied = append(n.colorsApplied, fatihcolor)
 	return n
+}
+
+func (n *Node) reColor() string {
+	tstring := n.contentsTrimmed
+	for _, colour := range n.colorsApplied {
+		tstring = color.New(colour).Sprint(tstring)
+	}
+	return tstring
+}
+
+func (n *Node) setTerminalDimensions() {
+	n.terminalWidth, n.terminalHeight = consolesize.GetConsoleSize()
 }
 
 type collector struct {
@@ -347,9 +365,33 @@ func vbar() rune {
 	return []rune("│")[0]
 }
 
+func (n *Node) trimToSize(maxwidth int) string {
+	var newRunes []rune
+	nlen := utf8.RuneCountInString(n.contents) // grab non-colored contents
+	if n.x1+nlen > maxwidth {
+		maxConLen := maxwidth - n.x1 - 20
+		for i, r := range n.contents {
+			if i > maxConLen {
+				break
+			}
+			newRunes = append(newRunes, r)
+		}
+		newString := string(newRunes) + "..."
+		return newString
+	}
+	// if content length is under width then we return as is
+	return n.contents
+}
+
 func (n *Node) render(width int, border bool) (row *rrow) {
+	var repr string
+	n.contentsTrimmed = n.trimToSize(width)
+	n.contentsColored = n.reColor()
 	if n.colored {
-		width = width + (utf8.RuneCountInString(n.contentsColored) - utf8.RuneCountInString(n.contents))
+		width = width + (utf8.RuneCountInString(n.contentsColored) - utf8.RuneCountInString(n.contentsTrimmed))
+		repr = n.contentsColored
+	} else {
+		repr = n.contentsTrimmed
 	}
 	row = newRrow(width)
 	for x := 0; x <= width; x++ {
@@ -364,11 +406,7 @@ func (n *Node) render(width int, border bool) (row *rrow) {
 			}
 		}
 		if x == n.x1 {
-			if n.colored {
-				row.appendString(x, n.genDecorator(0)+n.contentsColored)
-			} else {
-				row.appendString(x, n.genDecorator(0)+n.String())
-			}
+			row.appendString(x, n.genDecorator(0)+repr)
 		} else {
 			row.setRowI(x, n.padRune(), false)
 		}
@@ -437,6 +475,10 @@ func (n *Node) DrawOptions(di *DrawInput) (rendering string) {
 		n.shiftAllRight(2)
 	}
 	desc := n.GetAllDescendents()
+	n.setTerminalDimensions()
+	if n.terminalWidth < width {
+		width = n.terminalWidth - 5
+	}
 	// draw root first
 	bmp[0] = n.render(width, di.Border).toRunes()
 	// now draw descendents

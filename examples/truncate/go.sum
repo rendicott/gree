@@ -9,8 +9,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/nathan-fiscaletti/consolesize-go v0.0.0-20220204101620-317176b6684d h1:NqRhLdNVlozULwM1B3VaHhcXYSgrOAv8V5BE65om+1Q=
 github.com/nathan-fiscaletti/consolesize-go v0.0.0-20220204101620-317176b6684d/go.mod h1:cxIIfNMTwff8f/ZvRouvWYF6wOoO7nj99neWSx2q/Es=
-github.com/rendicott/gree v0.0.3 h1:y1B0B842r91fetgNDtcyfLo4+dLBz/kW0dX3wDOjf54=
-github.com/rendicott/gree v0.0.3/go.mod h1:HZo/rIJxBtQl5Ee0nNYf0IfaICJC2S3I3dF2ZRYba54=
+github.com/rendicott/gree v0.0.5 h1:8cApTjP8oQc3sp7nftDlUef7AVO2UI3FbttUbgyg57k=
+github.com/rendicott/gree v0.0.5/go.mod h1:YeJ3KcvFYHvuNb/WjUg3G+BvZZ4Z/9o/0lNf2HF2D8s=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.14.0 h1:Vz7Qs629MkJkGyHxUlRHizWJRG2j8fbQKjELVSNhy7Q=
