@@ -40,6 +40,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/fatih/color"
+	"github.com/google/uuid"
 )
 
 // Node contains methods for adding/retrieving children
@@ -48,6 +49,7 @@ type Node struct {
 	parent   *Node
 	lineage  []*Node // lineage is the parent and all of the parent's parents
 	children []*Node
+	id       uuid.UUID
 
 	// Contents is the string identifier for thise node
 	// and is what will be displayed
@@ -83,6 +85,13 @@ func (c *counter) add() {
 
 func (c *counter) get() int {
 	return c.count
+}
+
+// GetID returns the UUID of the node.
+// Useful for identifying unique nodes when
+// many have the same contents.
+func (n *Node) GetID() string {
+	return n.id.String()
 }
 
 // setx1 sets the x1 property of this node and auto
@@ -147,7 +156,7 @@ func (n *Node) GetChild(y int) (dc *Node) {
 
 func (n *Node) relateAsRoot() {
 	n.isRoot = true
-	n.relate(&n.count, false, true, false, false, nil)
+	n.relate(&n.count, false, true, false, false, n)
 }
 
 func (n *Node) getDescMaxWidth() (max int) {
@@ -167,7 +176,9 @@ func (n *Node) getDescMaxWidth() (max int) {
 // the passed string. Please do not use color formatted
 // strings and instead use the provided SetColor* methods.
 func NewNode(contents string) *Node {
-	n := Node{}
+	n := Node{
+		id: uuid.New(),
+	}
 	n.SetContents(contents)
 	n.setPadding("   ")
 	return &n
@@ -222,6 +233,10 @@ func (n *Node) GetAllDescendents() (all []*Node) {
 	return all
 }
 
+const (
+	blankUUID string = "00000000-0000-0000-0000-000000000000"
+)
+
 // NewChild adds a child with contents of the passed
 // string to this Node's children. It returns the pointer
 // to the new Node. This can be discarded or used for chaining
@@ -229,20 +244,24 @@ func (n *Node) GetAllDescendents() (all []*Node) {
 //
 // Please do not use color formatted strings and instead use the provided SetColor* methods.
 func (n *Node) NewChild(contents string) *Node {
-	nn := Node{}
-	nn.SetContents(contents)
-	nn.setPadding("   ")
-	n.AddChild(&nn)
-	return &nn
+	if n.id.String() == blankUUID {
+		n.id = uuid.New()
+	}
+	nn := n.AddChild(NewNode(contents))
+	return nn
 }
 
 // AddChild adds the given Node to the children
 // of the current Node
-func (n *Node) AddChild(nc *Node) {
+func (n *Node) AddChild(nc *Node) *Node {
+	if n.id.String() == blankUUID {
+		n.id = uuid.New()
+	}
 	nc.parent = n
 	nc.depth = n.depth + 1
 	n.children = append(n.children, nc)
 	n.updateDepths()
+	return nc
 }
 
 func (n *Node) updateDepths() {
@@ -506,12 +525,18 @@ func sibCharS() string {
 	return "├"
 }
 
+func cleanLineage(input []*Node) (output []*Node) {
+	for _, n := range input {
+		if n != nil {
+			output = append(output, n)
+		}
+	}
+	return output
+}
+
 // relate is meant to be a recursive function passing knowledge about parent relationships
 // it sets node properties to be used later for drawing purposes
 func (n *Node) relate(count *counter, amSibling, amLastSibling, parentIsSibling, parentIsLastSibling bool, parent *Node) {
-	if n.done {
-		return
-	}
 	n.index = count.get()
 	count.add()
 	n.amLastSibling = amLastSibling
@@ -526,7 +551,13 @@ func (n *Node) relate(count *counter, amSibling, amLastSibling, parentIsSibling,
 		} else {
 			n.setx1(parent.x1 + utf8.RuneCountInString(n.padding) + 1)
 		}
-		n.lineage = append(n.parent.lineage, n.parent)
+		n.lineage = make([]*Node, len(parent.lineage)+1)
+		for _, ancestor := range parent.lineage {
+			if ancestor != nil {
+				n.lineage = append(n.lineage, ancestor)
+			}
+		}
+		n.lineage = append(n.lineage, parent)
 	}
 	for i, child := range n.children {
 		as := true            // am sibling
@@ -538,7 +569,7 @@ func (n *Node) relate(count *counter, amSibling, amLastSibling, parentIsSibling,
 		}
 		child.relate(count, as, als, pis, pils, n)
 	}
-	n.done = true
+	n.lineage = cleanLineage(n.lineage)
 }
 
 func (n *Node) dive(depth int) int {
