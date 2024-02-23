@@ -144,6 +144,9 @@ func (n *Node) reColor() string {
 
 func (n *Node) setTerminalDimensions() {
 	n.terminalWidth, n.terminalHeight = consolesize.GetConsoleSize()
+	if n.terminalWidth < 20 {
+		n.terminalWidth = 20
+	}
 }
 
 type collector struct {
